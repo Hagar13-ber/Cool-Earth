@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-import random
+import csv
 import subprocess
 import board
 import busio
@@ -62,6 +62,12 @@ L3GD20H_ADDR = 0x6B
 L3G_CTRL1 = 0x20
 L3G_OUT_X_L = 0x28
 
+# Navigation status mapping (kept in 1/2/3 format):
+# 1 = bad, 2 = degraded, 3 = good.
+NAV_STATUS_BAD = 1
+NAV_STATUS_DEGRADED = 2
+NAV_STATUS_GOOD = 3
+
 def setup_imu():
     """Initializes the I2C bus for the IMU and wakes up the sensor."""
     bus = smbus2.SMBus(1)
@@ -84,6 +90,88 @@ def read_gyro(bus):
     y = read_raw_axis(bus, L3GD20H_ADDR, L3G_OUT_X_L + 2)
     z = read_raw_axis(bus, L3GD20H_ADDR, L3G_OUT_X_L + 4)
     return x, y, z
+
+
+def _capture_frame(frame_index=0):
+    """
+    Capture one frame for NAVIGATION.
+
+    Two implementation sections are kept here on purpose:
+    1) Real camera capture path (stub for future RT hardware integration).
+    2) Scenario CSV fallback path (current placeholder using pre-saved FITS files).
+    """
+    use_real_capture = False
+
+    # Section 1: Real camera capture path (future implementation).
+    if use_real_capture:
+        # TODO: Add actual camera capture logic.
+        # Expected behavior:
+        # - Capture one frame from the onboard camera
+        # - Save it under Cool-Earth-NAV/data/captured/
+        # - Return the saved FITS path
+        pass
+
+    # Section 2: Scenario CSV fallback (current placeholder behavior).
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    scenarios_csv = os.path.join(project_root, "Cool-Earth-NAV", "data", "scenarios.csv")
+    captured_dir = os.path.join(project_root, "Cool-Earth-NAV", "data", "captured")
+
+    frame_paths = []
+    try:
+        with open(scenarios_csv, 'r', newline='') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                filename = (row.get('filename') or '').strip()
+                if filename:
+                    frame_paths.append(os.path.join(captured_dir, filename))
+    except Exception as e:
+        print(f"Warning: Could not load scenarios.csv ({e}).")
+        return None
+
+    if not frame_paths:
+        print("Warning: scenarios.csv loaded but no valid frame filenames were found.")
+        return None
+
+    frame_path = frame_paths[frame_index % len(frame_paths)]
+    print(f"Captured frame: {frame_path}")
+    return frame_path
+
+
+def _run_opnav_navigation_once(frame_path):
+    """
+    Runs one non-interactive OpNav attempt and maps result to nav_status semantics.
+
+    Intended purpose:
+    Use camera-based OpNav measurements to calibrate/estimate gyro drift quality.
+
+    Current placeholder behavior:
+    - GOOD (3): pipeline execution succeeded.
+    - DEGRADED (2): pipeline ran but did not reach full quality (for example, too few matches).
+    - BAD (1): pipeline failed or call failed.
+    """
+    try:
+        project_root = os.path.dirname(os.path.abspath(__file__))
+        opnav_dir = os.path.join(project_root, "Cool-Earth-NAV")
+        if opnav_dir not in sys.path:
+            sys.path.insert(0, opnav_dir)
+
+        import process_star_image
+
+        result = process_star_image.run_single_image_pipeline(
+            image_path=frame_path,
+            show_plot=False,
+            verbose=False
+        )
+        if result.get('status') == 'ok':
+            return NAV_STATUS_GOOD, result
+
+        if result.get('message') == 'not_enough_matches':
+            return NAV_STATUS_DEGRADED, result
+
+        return NAV_STATUS_BAD, result
+
+    except Exception as e:
+        return NAV_STATUS_BAD, {'status': 'failed', 'message': f'opnav_call_failed: {e}'}
 
 # ==========================================
 #           STATE MACHINE LOGIC
@@ -152,14 +240,32 @@ def main():
                 time.sleep(2)
                 leds['navigation'].off()
                 
-                nav_stat = 0
-                # Loop until Nav_stat equals 3
-                while nav_stat != 3:
-                    nav_stat = random.randint(1, 3)
-                    print(f"Nav_stat generated: {nav_stat}")
+                nav_status = NAV_STATUS_BAD
+                frame_index = 0
+                # Placeholder loop purpose:
+                # keep running OpNav camera measurements until navigation quality is
+                # good enough to represent successful gyro-drift calibration input.
+                while nav_status != NAV_STATUS_GOOD:
+                    frame_path = _capture_frame(frame_index)
+                    if not frame_path:
+                        nav_status = NAV_STATUS_BAD
+                        print("OpNav skipped: no captured frame available.")
+                        frame_index += 1
+                        time.sleep(1)
+                        continue
+
+                    nav_status, nav_result = _run_opnav_navigation_once(frame_path)
+                    print(
+                        "OpNav result: "
+                        f"status={nav_result.get('status')} "
+                        f"message={nav_result.get('message')} "
+                        f"matched={nav_result.get('num_matched')} "
+                        f"nav_status={nav_status}"
+                    )
+                    frame_index += 1
                     time.sleep(1)
                     
-                print("Nav_stat is 3. Proceeding to ADCS.")
+                print("Nav status is GOOD. Proceeding to ADCS.")
                 state = "ADCS"
                 
             elif state == "ADCS":

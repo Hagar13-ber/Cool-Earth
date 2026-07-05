@@ -1,0 +1,27 @@
+name: coolearth-rt
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - scipy
+  - matplotlib
+  - pandas
+  - astropy
+  - astroquery
+  - lxml
+  - cython
+  - spiceypy
+  - psutil
+  - dill
+  - setuptools
+  - opencv
+  - pip:
+      - smbus2
+      - gpiozero
+      - adafruit-blinka
+      - adafruit-circuitpython-pca9685
+      - adafruit-circuitpython-motor
+      - "RPi.GPIO; platform_system == 'Linux'"
+      - -e ./Cool-Earth-NAV/giant
