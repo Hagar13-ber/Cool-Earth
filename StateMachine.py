@@ -160,7 +160,11 @@ def _run_opnav_navigation_once(frame_path):
         result = process_star_image.run_single_image_pipeline(
             image_path=frame_path,
             show_plot=False,
-            verbose=False
+            verbose=False,
+            # t: seconds since reference epoch (used to compute ecliptic longitude)
+            # lambda_0: initial ecliptic longitude in DEGREES (converted to radians internally)
+            t=0.0,
+            lambda_0=0.0,
         )
         if result.get('status') == 'ok':
             return NAV_STATUS_GOOD, result
