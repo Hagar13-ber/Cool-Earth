@@ -1,27 +1,142 @@
 name: coolearth-rt
 channels:
   - conda-forge
+  - pytorch
 dependencies:
   - python=3.11
   - pip
+  - setuptools
+
+  # --- Scientific Core ---
   - numpy
   - scipy
   - matplotlib
   - pandas
+  - sympy
+  - numexpr
+
+  # --- Astronomy ---
   - astropy
   - astroquery
-  - lxml
-  - cython
   - spiceypy
+  - pvl
+
+  # --- Computer Vision ---
+  # Full opencv build (includes highgui, Qt, all codecs)
+  - opencv
+
+  # --- Data / IO ---
+  - lxml
+  - hdf5
+  - h5py
+  - pytables
+
+  # --- Build Tools ---
+  - cython
+
+  # --- Utilities ---
   - psutil
   - dill
-  - setuptools
-  - opencv
+  - tqdm
+  - networkx
+
+  # --- PyTorch (CPU) ---
+  - pytorch
+  - torchvision
+  - torchaudio
+  - cpuonly
+
   - pip:
+      # ---- Raspberry Pi Hardware ----
       - smbus2
       - gpiozero
       - adafruit-blinka
       - adafruit-circuitpython-pca9685
       - adafruit-circuitpython-motor
       - "RPi.GPIO; platform_system == 'Linux'"
+
+      # ---- Giant OpNav (editable install) ----
       - -e ./Cool-Earth-NAV/giant
+
+      # ---- Computer Vision / ML ----
+      - kornia
+      - kornia-rs
+      - timm
+      - albumentations
+      - albucore
+      - romatch
+      - poselib
+      - safetensors
+      - einops
+      - simsimd
+      - stringzilla
+
+      # ---- Hugging Face ----
+      - huggingface-hub
+      - hf-xet
+
+      # ---- Serialization / Data ----
+      - blosc2
+      - ndindex
+      - msgpack
+      - protobuf
+
+      # ---- HTTP / Async ----
+      - httpx
+      - httpcore
+      - h11
+      - anyio
+      - sniffio
+
+      # ---- Astronomy Extras ----
+      - astropy-iers-data
+      - pyerfa
+      - pyvo
+
+      # ---- Git ----
+      - gitpython
+      - gitdb
+      - smmap
+
+      # ---- HTML / Web Parsing ----
+      - beautifulsoup4
+      - html5lib
+      - webencodings
+      - soupsieve
+
+      # ---- Validation / Types ----
+      - pydantic
+      - pydantic-core
+      - annotated-types
+      - typing-inspection
+      - scipy-stubs
+
+      # ---- CLI / Logging ----
+      - click
+      - typer-slim
+      - shellingham
+      - loguru
+
+      # ---- Experiment Tracking ----
+      - wandb
+      - sentry-sdk
+
+      # ---- File System / Packaging ----
+      - fsspec
+      - platformdirs
+      - keyring
+      - importlib-metadata
+      - zipp
+      - more-itertools
+      - jaraco-classes
+      - jaraco-context
+      - jaraco-functools
+      - backports-tarfile
+      - packaging
+      - py-cpuinfo
+
+      # ---- Misc Utilities ----
+      - six
+      - python-dateutil
+      - pytz
+      - tzdata
