@@ -12,6 +12,14 @@ from adafruit_motor import servo
 from gpiozero import LED
 
 # ==========================================
+#      OPNAV VISUALIZATION SETTINGS
+# ==========================================
+# Set OPNAV_SHOW_MATCHED_STARS to True to display a matched-stars popup
+# after every OpNav pipeline call during the NAVIGATION state.
+# This overrides config.PROC_SHOW_MATCHED_STARS_POPUP in Cool-Earth-NAV/config.py.
+OPNAV_SHOW_MATCHED_STARS = False  # <-- change here to enable
+
+# ==========================================
 #         HARDWARE SETUP FUNCTIONS
 # ==========================================
 
@@ -165,6 +173,8 @@ def _run_opnav_navigation_once(frame_path):
             # lambda_0: initial ecliptic longitude in DEGREES (converted to radians internally)
             t=0.0,
             lambda_0=0.0,
+            # Matched-stars popup — controlled by OPNAV_SHOW_MATCHED_STARS above
+            show_matched_stars_popup=OPNAV_SHOW_MATCHED_STARS,
         )
         if result.get('status') == 'ok':
             return NAV_STATUS_GOOD, result
